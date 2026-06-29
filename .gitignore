@@ -12,3 +12,4 @@ config/
 
 # Credenciales y configuraciones locales
 tokens.json
+package-lock.json
