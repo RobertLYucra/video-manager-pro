@@ -97,14 +97,11 @@ body {
 }
 
 .nav-btn.active {
-  background: linear-gradient(
-    118deg,
-    var(--accent-primary),
-    rgba(51, 82, 255, 0.7)
-  );
+  background: var(--accent-primary);
   color: #ffffff;
-  box-shadow: 0 0 10px 1px rgba(51, 82, 255, 0.7);
   font-weight: bold;
+  border-radius: 5px;
+  margin-left: 15px;
 }
 
 /* Main Content */
