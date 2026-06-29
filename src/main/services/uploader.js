@@ -3,7 +3,8 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 const FormData = require('form-data');
-const db = require('../database/db');
+const pageRepository = require('../repositories/PageRepository');
+const videoRepository = require('../repositories/VideoRepository');
 
 const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB fragmentos
 
@@ -11,16 +12,20 @@ let isCancelled = false;
 
 async function startUpload(event, options = {}) {
     isCancelled = false;
-    const targetPagina = options.pagina || 'todas';
-    const targetCategoria = options.categoria || 'todas';
-    const limiteVideos = options.limite || 7;
-    const intervaloInicial = options.intervaloInicial || 10;
-    const intervaloSucesivo = options.intervaloSucesivo || 60;
-    const fechaExacta = options.fechaExacta || null; // string in format YYYY-MM-DDTHH:mm
+    const targetPaginaId = options.pageId || 'todas';
+    const targetCategoria = options.category || 'todas';
+    let limiteVideos = parseInt(options.limit, 10);
+    if (isNaN(limiteVideos)) limiteVideos = 7;
+    
+    let intervaloInicial = parseInt(options.intervaloInicial, 10);
+    if (isNaN(intervaloInicial) || intervaloInicial < 15) intervaloInicial = 15; // Facebook requiere mínimo 10 mins, usamos 15 por seguridad
+    
+    const intervaloSucesivo = parseInt(options.intervaloSucesivo, 10) || 60;
+    const fechaExacta = options.fechaExacta || null;
     
     const PUBLICAR_INMEDIATO = options.publicarInmediato || (process.env.PUBLICAR_INMEDIATO === 'true'); 
     
-    const tokensDb = await db.getPages();
+    const tokensDb = await pageRepository.findAll();
 
     if (tokensDb.length === 0) {
         event.reply('upload-progress', 'ERROR: No se encontraron páginas configuradas. Ve a Configuración para añadirlas.');
@@ -29,13 +34,20 @@ async function startUpload(event, options = {}) {
     }
 
     try {
-        const records = await db.getVideos();
+        const records = await videoRepository.findAll();
+
+        // Mapear pageId a folder name para poder filtrar los videos
+        let targetPaginaFolder = 'todas';
+        if (targetPaginaId !== 'todas') {
+            const sp = tokensDb.find(p => String(p.id) === String(targetPaginaId));
+            if (sp) targetPaginaFolder = sp.folder;
+        }
 
         const pendingVideos = [];
         for (let i = 0; i < records.length; i++) {
             let matchPagina = true;
-            if (targetPagina && targetPagina.toLowerCase() !== 'todas') {
-                matchPagina = records[i].pagina_destino && records[i].pagina_destino.toLowerCase() === targetPagina.toLowerCase();
+            if (targetPaginaFolder !== 'todas') {
+                matchPagina = records[i].pagina_destino && records[i].pagina_destino.toLowerCase() === targetPaginaFolder.toLowerCase();
             }
             
             let matchCategoria = true;
@@ -99,12 +111,12 @@ async function startUpload(event, options = {}) {
 
             if (!fs.existsSync(filePath)) {
                 event.reply('upload-progress', `❌ Archivo no existe: ${filePath}`);
-                await db.updateVideo(video.id, { estado: 'error', error_log: 'Archivo no encontrado' });
+                await videoRepository.update(video.id, { estado: 'error', error_log: 'Archivo no encontrado' });
                 continue; 
             }
 
             const stats = fs.statSync(filePath);
-            await db.updateVideo(video.id, { intentos: (video.intentos || 0) + 1 });
+            await videoRepository.update(video.id, { intentos: (video.intentos || 0) + 1 });
 
             try {
                 event.reply('upload-progress', '🔄 Fase 1: START...');
@@ -192,12 +204,12 @@ async function startUpload(event, options = {}) {
                         updateData.ruta = path.relative(__dirname, nuevaRuta);
                     } catch (err) {}
 
-                    await db.updateVideo(video.id, updateData);
+                    await videoRepository.update(video.id, updateData);
                 }
             } catch (videoError) {
                 const msgError = videoError.response ? JSON.stringify(videoError.response.data) : videoError.message;
                 event.reply('upload-progress', `❌ Error subiendo ${video.titulo}: ${msgError}`);
-                await db.updateVideo(video.id, { estado: 'error', error_log: msgError });
+                await videoRepository.update(video.id, { estado: 'error', error_log: msgError });
             }
         }
         

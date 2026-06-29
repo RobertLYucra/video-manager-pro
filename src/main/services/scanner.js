@@ -1,20 +1,27 @@
 const fs = require('fs');
 const path = require('path');
 const db = require('../database/db');
+const pageRepository = require('../repositories/PageRepository');
 
 const projectRoot = path.join(__dirname, '..', '..', '..');
 const descargasDir = path.join(projectRoot, 'descargas');
 
-async function syncFilesToDB() {
+async function syncFilesToDB(event) {
+    const sendLog = (msg) => {
+        console.log(msg);
+        if (event && event.sender) {
+            event.sender.send('upload-progress', { type: 'log', message: msg + '\n' });
+        }
+    };
     try {
         const videosData = [];
         let ignorados = 0;
 
         // 1. Obtener todas las páginas de la base de datos
-        const paginas = await db.getPages();
+        const paginas = await pageRepository.findAll();
 
         if (paginas.length === 0) {
-            console.log('No hay páginas configuradas. Escáner terminado.');
+            sendLog('No hay páginas configuradas. Escáner terminado.');
             return;
         }
 
@@ -29,7 +36,7 @@ async function syncFilesToDB() {
             const paginaNombre = page.folder; // guardamos el folder original
 
             if (!fs.existsSync(paginaDir)) {
-                console.log(`⚠️ La carpeta de la página no existe o no es válida: ${paginaDir}`);
+                sendLog(`⚠️ La carpeta de la página no existe o no es válida: ${paginaDir}`);
                 return; // skip esta página
             }
 
@@ -206,9 +213,10 @@ async function syncFilesToDB() {
             throw err;
         }
 
-        console.log(`¡Éxito! Se sincronizaron los archivos. Se agregaron ${agregados} nuevos videos y se regeneraron ${regenerados} registros en la base de datos.`);
+        sendLog(`¡Éxito! Se sincronizaron los archivos. Se agregaron ${agregados} nuevos videos y se regeneraron ${regenerados} registros en la base de datos.`);
         return { success: true, message: `Registros generados: ${agregados} nuevos, ${regenerados} regenerados.` };
     } catch (error) {
+        if (event && event.sender) event.sender.send('upload-progress', { type: 'log', message: `❌ Error al sincronizar: ${error.message}\n` });
         console.error('Error al sincronizar con SQLite:', error);
         throw error;
     }

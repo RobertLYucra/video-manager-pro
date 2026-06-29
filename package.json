@@ -4,8 +4,8 @@
   "description": "Herramienta pro para subir videos masivos a Facebook de forma programada.",
   "main": "src/main/main.js",
   "scripts": {
-    "start": "electron .",
-    "build": "electron-builder --win",
+    "dev": "concurrently \"vite\" \"electron .\"",
+    "build": "vite build && electron-builder --win",
     "generar-csv": "node generar_csv.js",
     "subir-videos": "node uploader.js --categoria=justicia --limite=2",
     "postinstall": "node scripts/download-yt-dlp.js"
@@ -21,21 +21,35 @@
     "ffmpeg-static": "^5.3.0",
     "form-data": "^4.0.6",
     "languagedetect": "^2.0.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "sqlite": "^5.1.1",
     "sqlite3": "^6.0.1"
   },
   "devDependencies": {
+    "@vitejs/plugin-react": "^6.0.3",
+    "concurrently": "^10.0.3",
     "electron": "^34.1.1",
-    "electron-builder": "^25.1.8"
+    "electron-builder": "^25.1.8",
+    "vite": "^8.1.0"
   },
   "build": {
     "appId": "com.creatorpro.app",
-    "productName": "Creator Pro",
+    "productName": "Video Manager Pro",
     "win": {
       "icon": "src/assets/icon.png"
     },
     "directories": {
       "output": "dist"
-    }
+    },
+    "asar": false,
+    "files": [
+      "**/*",
+      "!descargas${/*}",
+      "!procesados${/*}",
+      "!config${/*}",
+      "!src/renderer${/*}",
+      "!.env"
+    ]
   }
 }
