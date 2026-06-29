@@ -1,0 +1,14 @@
+node_modules
+
+dist
+descargas
+.env
+
+# Ejecutables (descargados automáticamente por el script)
+bin/
+
+# Base de datos y registros temporales
+config/
+
+# Credenciales y configuraciones locales
+tokens.json
