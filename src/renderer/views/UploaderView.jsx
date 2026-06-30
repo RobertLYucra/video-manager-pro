@@ -89,7 +89,6 @@ function UploaderView() {
     };
 
     const handleGenerateCsv = async () => {
-        setIsLogExpanded(true);
         setLogLines([{ text: 'Iniciando escaneo y auto registro...\n', isSuccess: false }]);
         const res = await window.electronAPI.generateCsv();
         if (res.success) {
@@ -119,7 +118,6 @@ function UploaderView() {
             publicarInmediato: immediate
         };
 
-        setIsLogExpanded(true);
         setIsUploading(true);
         setProgress(0);
         setLogLines([{ text: 'Iniciando configuración de publicaciones...\n', isSuccess: false }]);
