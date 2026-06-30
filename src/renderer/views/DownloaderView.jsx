@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import LoggerTerminal from '../components/LoggerTerminal';
 
 function DownloaderView() {
     const [format, setFormat] = useState('video');
@@ -6,31 +7,7 @@ function DownloaderView() {
     const [forceRedownload, setForceRedownload] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
     
-    const logOutputRef = useRef(null);
-
     const [logLines, setLogLines] = useState([]);
-    const [isLogExpanded, setIsLogExpanded] = useState(false);
-    const [elapsedTime, setElapsedTime] = useState(0);
-
-    // Timer Effect
-    useEffect(() => {
-        let interval;
-        if (isDownloading) {
-            setElapsedTime(0);
-            interval = setInterval(() => {
-                setElapsedTime(prev => prev + 1);
-            }, 1000);
-        } else {
-            clearInterval(interval);
-        }
-        return () => clearInterval(interval);
-    }, [isDownloading]);
-
-    const formatTime = (seconds) => {
-        const m = String(Math.floor(seconds / 60)).padStart(2, '0');
-        const s = String(seconds % 60).padStart(2, '0');
-        return `${m}:${s}`;
-    };
 
     useEffect(() => {
         // Singleton pattern to prevent duplicate IPC listeners on mount/unmount
@@ -103,13 +80,6 @@ function DownloaderView() {
         };
     }, []);
 
-    // Auto-scroll effect when logLines changes
-    useEffect(() => {
-        if (logOutputRef.current) {
-            logOutputRef.current.scrollTop = logOutputRef.current.scrollHeight;
-        }
-    }, [logLines]);
-
     const [urls, setUrls] = useState([]);
     const [urlInput, setUrlInput] = useState('');
     const [hasError, setHasError] = useState(false);
@@ -166,7 +136,6 @@ function DownloaderView() {
         const outputFolder = await window.electronAPI.selectDirectory();
         if (!outputFolder) return;
 
-        setIsLogExpanded(true);
         setIsDownloading(true);
         setLogLines([{ text: `Carpeta de destino: ${outputFolder}\nIniciando proceso de descarga para ${currentUrls.length} enlace(s)...\n\n`, isProgress: false }]);
 
@@ -287,39 +256,12 @@ function DownloaderView() {
                 </div>
             </div>
 
-            <div className="card terminal-card" style={{marginTop: '24px'}}>
-                <div 
-                    className="terminal-header" 
-                    style={{cursor: 'pointer', userSelect: 'none'}} 
-                    onClick={() => setIsLogExpanded(!isLogExpanded)}
-                >
-                    <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{transition: 'transform 0.2s', transform: isLogExpanded ? 'rotate(90deg)' : 'rotate(0deg)'}}>
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                        <span>Registro de proceso</span>
-                    </div>
-                    <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
-                        {(isDownloading || elapsedTime > 0) && (
-                            <span style={{fontFamily: 'monospace', color: 'var(--accent-primary)'}}>{formatTime(elapsedTime)}</span>
-                        )}
-                        {isDownloading && <div className="status-dot"></div>}
-                        <button className="btn-small" onClick={(e) => { e.stopPropagation(); setLogLines([]); }}>Limpiar</button>
-                    </div>
-                </div>
-                {isLogExpanded && (
-                    <div ref={logOutputRef} className="terminal">
-                        {logLines.map((line, idx) => (
-                            <div key={idx} style={{ 
-                                color: line.text.includes('❌') || line.text.includes('Error') ? 'var(--danger)' : 
-                                       line.text.includes('✅') || line.text.includes('éxito') ? 'var(--success)' : 'inherit'
-                            }}>
-                                {line.text}
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+            <LoggerTerminal 
+                title="Registro de Descargas"
+                logLines={logLines}
+                onClear={() => setLogLines([])}
+                isActive={isDownloading}
+            />
         </section>
     );
 }

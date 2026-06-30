@@ -254,7 +254,6 @@ body {
 .page-list-item:hover {
   background: #f1f5f9;
   border-color: var(--input-border);
-  transform: translateX(4px);
 }
 
 .page-list-name {
@@ -522,12 +521,14 @@ input:checked + .slider:before {
   color: var(--text-primary);
 }
 
-.btn-small.delete-btn {
+.btn-small.delete-btn,
+.btn-small.clear-btn {
   background-color: #fce4e4;
   color: #ea5455;
 }
 
-.btn-small.delete-btn:hover {
+.btn-small.delete-btn:hover,
+.btn-small.clear-btn:hover {
   background-color: #f8d5d5;
 }
 

@@ -1,6 +1,12 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
+    getPathForFile: (file) => {
+        if (webUtils && webUtils.getPathForFile) {
+            return webUtils.getPathForFile(file);
+        }
+        return file.path;
+    },
     selectDirectory: () => ipcRenderer.invoke('select-directory'),
     clearHistory: () => ipcRenderer.invoke('clear-history'),
     startDownload: (options) => ipcRenderer.send('start-download', options),
@@ -22,5 +28,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Pages Config
     addPage: (pageData) => ipcRenderer.invoke('add-page', pageData),
     updatePage: (id, pageData) => ipcRenderer.invoke('update-page', { id, pageData }),
-    deletePage: (id) => ipcRenderer.invoke('delete-page', id)
+    deletePage: (id) => ipcRenderer.invoke('delete-page', id),
+
+    // Extractor
+    selectFilesForExtraction: () => ipcRenderer.invoke('select-files-extraction'),
+    startExtraction: (files, format) => ipcRenderer.send('start-extraction', { files, format }),
+    cancelExtraction: () => ipcRenderer.send('cancel-extraction'),
+    onExtractorProgress: (callback) => ipcRenderer.on('extractor-progress', callback),
+    showItemInFolder: (path) => ipcRenderer.send('show-item-in-folder', path),
+
+    // Editor Pro
+    selectFilesForEditor: (multiple) => ipcRenderer.invoke('select-files-editor', multiple),
+    startEditorTrim: (data) => ipcRenderer.send('start-editor-trim', data),
+    startEditorCompress: (data) => ipcRenderer.send('start-editor-compress', data),
+    startEditorJoin: (data) => ipcRenderer.send('start-editor-join', data),
+    cancelEditor: () => ipcRenderer.send('cancel-editor'),
+    onEditorProgress: (callback) => ipcRenderer.on('editor-progress', callback),
+    removeAllEditorProgressListeners: () => ipcRenderer.removeAllListeners('editor-progress')
 });

@@ -51,11 +51,15 @@ const downloadController = require('./controllers/DownloadController');
 const uploadController = require('./controllers/UploadController');
 const pageController = require('./controllers/PageController');
 const videoController = require('./controllers/VideoController');
+const extractorController = require('./controllers/ExtractorController');
+const editorController = require('./controllers/EditorController');
 
 downloadController.register();
 uploadController.register();
 pageController.register();
 videoController.register();
+extractorController.register();
+editorController.register();
 
 // Manejar selección de carpeta
 ipcMain.handle('select-directory', async () => {

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
+import LoggerTerminal from '../components/LoggerTerminal';
 
 function UploaderView() {
     const [pages, setPages] = useState([]);
@@ -15,36 +16,8 @@ function UploaderView() {
     const [isUploading, setIsUploading] = useState(false);
     const [progress, setProgress] = useState(0);
 
-    const logRef = useRef(null);
-
     const [logLines, setLogLines] = useState([]);
-    const [isLogExpanded, setIsLogExpanded] = useState(false);
-    const [elapsedTime, setElapsedTime] = useState(0);
     const [hasError, setHasError] = useState(false);
-
-    useEffect(() => {
-        let interval;
-        if (isUploading) {
-            setElapsedTime(0);
-            interval = setInterval(() => {
-                setElapsedTime(prev => prev + 1);
-            }, 1000);
-        } else {
-            clearInterval(interval);
-        }
-        return () => clearInterval(interval);
-    }, [isUploading]);
-
-    const formatTime = (seconds) => {
-        const m = String(Math.floor(seconds / 60)).padStart(2, '0');
-        const s = String(seconds % 60).padStart(2, '0');
-        return `${m}:${s}`;
-    };
-
-    // Auto-scroll
-    useEffect(() => {
-        if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
-    }, [logLines]);
 
     useEffect(() => {
         loadPages();
@@ -247,39 +220,12 @@ function UploaderView() {
                 </div>
             )}
 
-            <div className="card terminal-card" style={{ marginTop: '24px' }}>
-                <div
-                    className="terminal-header"
-                    style={{ cursor: 'pointer', userSelect: 'none' }}
-                    onClick={() => setIsLogExpanded(!isLogExpanded)}
-                >
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transition: 'transform 0.2s', transform: isLogExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}>
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                        <span>Logs del Servidor de Subida</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                        {(isUploading || elapsedTime > 0) && (
-                            <span style={{ fontFamily: 'monospace', color: 'var(--accent-primary)' }}>{formatTime(elapsedTime)}</span>
-                        )}
-                        {isUploading && <div className="status-dot"></div>}
-                        <button className="btn-small" onClick={(e) => { e.stopPropagation(); setLogLines([]); }}>Limpiar</button>
-                    </div>
-                </div>
-                {isLogExpanded && (
-                    <div ref={logRef} className="terminal">
-                        {logLines.map((line, idx) => (
-                            <div key={idx} style={{
-                                color: line.isError ? 'var(--danger)' :
-                                    line.isSuccess ? 'var(--success)' : 'inherit'
-                            }}>
-                                {line.text}
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+            <LoggerTerminal 
+                title="Log de Procesos"
+                logLines={logLines}
+                onClear={() => setLogLines([])}
+                isActive={isUploading}
+            />
         </section>
     );
 }

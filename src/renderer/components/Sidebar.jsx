@@ -8,8 +8,20 @@ function Sidebar({ currentView, setCurrentView }) {
   return (
     <aside className="sidebar">
       <div className="brand">
-        <div className="logo"></div>
-        <h2>Creator Pro</h2>
+        <div className="logo" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--accent-primary)' }}>
+            <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+            <line x1="7" y1="2" x2="7" y2="22"></line>
+            <line x1="17" y1="2" x2="17" y2="22"></line>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <line x1="2" y1="7" x2="7" y2="7"></line>
+            <line x1="2" y1="17" x2="7" y2="17"></line>
+            <line x1="17" y1="17" x2="22" y2="17"></line>
+            <line x1="17" y1="7" x2="22" y2="7"></line>
+            <polygon points="10 9 15 12 10 15 10 9" fill="currentColor"></polygon>
+          </svg>
+        </div>
+        <h2>Creador Pro</h2>
         <button
           className="theme-btn"
           onClick={toggleTheme}
@@ -97,6 +109,29 @@ function Sidebar({ currentView, setCurrentView }) {
             </svg>
           </span>{" "}
           Publicador
+        </button>
+        <button
+          className={`nav-btn ${currentView === "extractor" ? "active" : ""}`}
+          onClick={() => setCurrentView("extractor")}
+        >
+          <span className="icon">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M9 18V5l12-2v13"></path>
+              <circle cx="6" cy="18" r="3"></circle>
+              <circle cx="18" cy="16" r="3"></circle>
+            </svg>
+          </span>{" "}
+          Extractor Audio
         </button>
         <button
           className={`nav-btn ${currentView === "config" ? "active" : ""}`}
