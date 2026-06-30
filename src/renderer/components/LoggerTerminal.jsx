@@ -4,6 +4,8 @@ function LoggerTerminal({ title, logLines, onClear, isActive, elapsedTime, defau
     const [isLogExpanded, setIsLogExpanded] = useState(defaultExpanded);
     const logRef = useRef(null);
 
+    const [internalTime, setInternalTime] = useState(0);
+
     // Auto-scroll
     useEffect(() => {
         if (logRef.current && isLogExpanded) {
@@ -11,11 +13,34 @@ function LoggerTerminal({ title, logLines, onClear, isActive, elapsedTime, defau
         }
     }, [logLines, isLogExpanded]);
 
+    // Internal timer if external elapsedTime is not provided
+    useEffect(() => {
+        let interval;
+        if (isActive && elapsedTime === undefined) {
+            interval = setInterval(() => {
+                setInternalTime(prev => prev + 1);
+            }, 1000);
+        } else if (!isActive && elapsedTime === undefined) {
+            clearInterval(interval);
+        }
+        return () => clearInterval(interval);
+    }, [isActive, elapsedTime]);
+
+    // Reset internal timer when starting a new process (log clears or starts)
+    useEffect(() => {
+        if (isActive && logLines.length <= 1) {
+            setInternalTime(0);
+        }
+    }, [isActive, logLines]);
+
     const formatTime = (seconds) => {
+        if (isNaN(seconds) || seconds === undefined) seconds = 0;
         const m = String(Math.floor(seconds / 60)).padStart(2, '0');
         const s = String(seconds % 60).padStart(2, '0');
         return `${m}:${s}`;
     };
+
+    const displayTime = elapsedTime !== undefined ? elapsedTime : internalTime;
 
     return (
         <div className="card terminal-card" style={{ marginTop: '24px', marginBottom: '24px' }}>
@@ -31,8 +56,8 @@ function LoggerTerminal({ title, logLines, onClear, isActive, elapsedTime, defau
                     <span>{title || 'Consola'}</span>
                 </div>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                    {(isActive || elapsedTime > 0) && (
-                        <span style={{ fontFamily: 'monospace', color: 'var(--accent-primary)' }}>{formatTime(elapsedTime)}</span>
+                    {(isActive || displayTime > 0) && (
+                        <span style={{ fontFamily: 'monospace', color: 'var(--accent-primary)' }}>{formatTime(displayTime)}</span>
                     )}
                     {isActive && <div className="status-dot active"></div>}
                     <button className="btn-small clear-btn" onClick={(e) => { e.stopPropagation(); onClear(); }} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', width: 'auto', height: 'auto' }}>
