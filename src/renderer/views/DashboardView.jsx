@@ -31,33 +31,47 @@ function DashboardView() {
         const todayDate = new Date().toISOString().split('T')[0];
         
         // Reverse CSV data to get latest activity first
-        const sortedData = [...csvData].reverse();
+        const getPageName = (folderPath) => {
+            if (!folderPath) return 'Sin página';
+            const page = pagesData.find(p => p.folder === folderPath);
+            if (page && page.nombre_pag) return page.nombre_pag;
+            
+            // Fallback to basename
+            return folderPath.split('\\').pop().split('/').pop();
+        };
+
+        const sortedData = [...csvData].sort((a, b) => {
+            const dateA = new Date(a.fecha_proceso || a.fecha_creacion || 0);
+            const dateB = new Date(b.fecha_proceso || b.fecha_creacion || 0);
+            return dateB - dateA;
+        });
+        
         const recent = sortedData.slice(0, 5).map(row => {
             return {
-                title: row.ruta_video ? row.ruta_video.split('\\').pop().split('/').pop() : 'Video Desconocido',
-                page: row.pagina || 'Sin página',
+                title: row.titulo || row.archivo || 'Video Desconocido',
+                page: getPageName(row.pagina_destino),
                 status: row.estado ? row.estado.toLowerCase().trim() : 'pendiente'
             };
         });
 
         csvData.forEach(row => {
             const status = row.estado ? row.estado.toLowerCase().trim() : 'pendiente';
-            const uploadDate = row.fecha_subida ? row.fecha_subida.split(' ')[0] : '';
-            const pageFolder = row.pagina;
+            const uploadDate = row.fecha_proceso ? row.fecha_proceso.split('T')[0] : '';
+            const pageFolder = row.pagina_destino;
 
             if (pageFolder) {
                 if (!pageStats[pageFolder]) {
                     pageStats[pageFolder] = { name: pageFolder, total: 0, success: 0 };
                 }
                 pageStats[pageFolder].total++;
-                if (status === 'subido') {
+                if (status === 'completado') {
                     pageStats[pageFolder].success++;
                 }
             }
 
             if (status === 'pendiente') {
                 pendingCount++;
-            } else if (status === 'subido') {
+            } else if (status === 'completado') {
                 successCount++;
                 if (uploadDate === todayDate) {
                     todayCount++;
@@ -76,7 +90,7 @@ function DashboardView() {
     };
 
     const getStatusBadge = (status) => {
-        if (status === 'subido') return <span className="status-badge status-completado">Completado</span>;
+        if (status === 'completado') return <span className="status-badge status-completado">Completado</span>;
         if (status === 'error') return <span className="status-badge status-error">Error</span>;
         return <span className="status-badge status-pendiente">Pendiente</span>;
     };
