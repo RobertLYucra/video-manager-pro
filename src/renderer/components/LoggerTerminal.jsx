@@ -13,6 +13,13 @@ function LoggerTerminal({ title, logLines, onClear, isActive, elapsedTime, defau
         }
     }, [logLines, isLogExpanded]);
 
+    // Auto-expand when active
+    useEffect(() => {
+        if (isActive) {
+            setIsLogExpanded(true);
+        }
+    }, [isActive]);
+
     // Internal timer if external elapsedTime is not provided
     useEffect(() => {
         let interval;

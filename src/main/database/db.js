@@ -70,6 +70,7 @@ async function initializeDb(db) {
             estado TEXT DEFAULT 'pendiente',
             categoria TEXT DEFAULT 'General',
             pagina_destino TEXT,
+            nombre_pagina TEXT,
             id_facebook TEXT,
             fecha_creacion DATETIME,
             fecha_proceso DATETIME,
@@ -78,6 +79,13 @@ async function initializeDb(db) {
             FOREIGN KEY(pagina_destino) REFERENCES pages(folder)
         )
     `);
+
+    // Migrations for existing tables
+    try {
+        await db.exec(`ALTER TABLE videos ADD COLUMN nombre_pagina TEXT`);
+    } catch (err) {
+        // Ignorar si la columna ya existe
+    }
 
     // Basic Migration from old JSON and CSV if they exist and DB is empty
     const { count: pagesCount } = await db.get('SELECT COUNT(*) as count FROM pages');

@@ -9,7 +9,10 @@ function UploaderView() {
 
     const [limit, setLimit] = useState(7);
     const [initialInterval, setInitialInterval] = useState(10);
-    const [successiveInterval, setSuccessiveInterval] = useState(60);
+    const [initialIntervalUnit, setInitialIntervalUnit] = useState('minutes');
+    const [successiveInterval, setSuccessiveInterval] = useState(1);
+    const [successiveIntervalUnit, setSuccessiveIntervalUnit] = useState('hours');
+    const [firstVideoMode, setFirstVideoMode] = useState('relative');
     const [exactDate, setExactDate] = useState('');
     const [immediate, setImmediate] = useState(false);
 
@@ -56,6 +59,11 @@ function UploaderView() {
             if (result.success) {
                 window.showToast(result.message || 'Proceso completado', 'success');
                 setLogLines(prev => [...prev, { text: '\n✅ Proceso de subida finalizado.\n', isSuccess: true }]);
+                
+                // Limpiar filtros y fechas sensibles para evitar errores en futuras subidas
+                setExactDate('');
+                setImmediate(false);
+                setFirstVideoMode('relative');
             } else {
                 window.showToast('Proceso cancelado o fallido', 'error');
                 setLogLines(prev => [...prev, { text: '\n❌ Proceso abortado o fallido.\n', isError: true }]);
@@ -108,13 +116,16 @@ function UploaderView() {
         }
         setHasError(false);
 
+        const initialMin = initialIntervalUnit === 'hours' ? parseInt(initialInterval, 10) * 60 : parseInt(initialInterval, 10);
+        const successiveMin = successiveIntervalUnit === 'hours' ? parseInt(successiveInterval, 10) * 60 : parseInt(successiveInterval, 10);
+
         const options = {
             pageId: selectedPage,
             category: selectedCategory,
             limit: parseInt(limit, 10),
-            intervaloInicial: parseInt(initialInterval, 10),
-            intervaloSucesivo: parseInt(successiveInterval, 10),
-            fechaExacta: exactDate,
+            intervaloInicial: firstVideoMode === 'relative' ? initialMin : 0,
+            intervaloSucesivo: successiveMin,
+            fechaExacta: firstVideoMode === 'exact' ? exactDate : '',
             publicarInmediato: immediate
         };
 
@@ -166,18 +177,50 @@ function UploaderView() {
                     </div>
                 </div>
 
-                <div className="options-grid" style={{ marginTop: '20px' }}>
-                    <div className="form-group">
-                        <label>Minutos para el 1er video: </label>
-                        <input type="number" value={initialInterval} onChange={e => setInitialInterval(e.target.value)} min="0" />
+                <div className="options-grid" style={{ 
+                    marginTop: '20px', 
+                    opacity: immediate ? 0.4 : 1, 
+                    pointerEvents: immediate ? 'none' : 'auto',
+                    transition: 'all 0.3s ease'
+                }}>
+                    <div className="form-group" style={{ opacity: firstVideoMode === 'exact' ? 0.5 : 1, transition: 'opacity 0.2s' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                            <input type="radio" name="firstVideoMode" checked={firstVideoMode === 'relative'} onChange={() => { setFirstVideoMode('relative'); setExactDate(''); }} disabled={immediate} />
+                            <span>1er video en (Relativo):</span>
+                        </label>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <input type="number" value={initialInterval} onChange={e => setInitialInterval(e.target.value)} min="0" style={{ flex: 1 }} disabled={immediate || firstVideoMode === 'exact'} />
+                            <select value={initialIntervalUnit} onChange={e => setInitialIntervalUnit(e.target.value)} style={{ width: '90px', flex: 'none' }} disabled={immediate || firstVideoMode === 'exact'}>
+                                <option value="minutes">Minutos</option>
+                                <option value="hours">Horas</option>
+                            </select>
+                        </div>
                     </div>
-                    <div className="form-group">
-                        <label>Minutos entre videos: </label>
-                        <input type="number" value={successiveInterval} onChange={e => setSuccessiveInterval(e.target.value)} min="1" />
+
+                    <div className="form-group" style={{ opacity: firstVideoMode === 'relative' ? 0.5 : 1, transition: 'opacity 0.2s' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                            <input type="radio" name="firstVideoMode" checked={firstVideoMode === 'exact'} onChange={() => setFirstVideoMode('exact')} disabled={immediate} />
+                            <span>O en Fecha Exacta:</span>
+                        </label>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <input type="datetime-local" value={exactDate} onChange={e => { setExactDate(e.target.value); setFirstVideoMode('exact'); }} style={{ flex: 1 }} disabled={immediate || firstVideoMode === 'relative'} />
+                            {exactDate && firstVideoMode === 'exact' && (
+                                <button type="button" className="btn secondary" onClick={() => setExactDate('')} title="Borrar fecha" style={{ padding: '0 12px', flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }} disabled={immediate}>
+                                    ✕
+                                </button>
+                            )}
+                        </div>
                     </div>
+
                     <div className="form-group">
-                        <label>O seleccionar Fecha y Hora Exacta de Inicio</label>
-                        <input type="datetime-local" value={exactDate} onChange={e => setExactDate(e.target.value)} />
+                        <label>Tiempo entre videos: </label>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <input type="number" value={successiveInterval} onChange={e => setSuccessiveInterval(e.target.value)} min="1" style={{ flex: 1 }} disabled={immediate} />
+                            <select value={successiveIntervalUnit} onChange={e => setSuccessiveIntervalUnit(e.target.value)} style={{ width: '90px', flex: 'none' }} disabled={immediate}>
+                                <option value="minutes">Minutos</option>
+                                <option value="hours">Horas</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 

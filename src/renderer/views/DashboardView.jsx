@@ -31,13 +31,18 @@ function DashboardView() {
         const todayDate = new Date().toISOString().split('T')[0];
         
         // Reverse CSV data to get latest activity first
-        const getPageName = (folderPath) => {
+        const getPageName = (folderPath, rowNombrePagina) => {
+            if (rowNombrePagina) return rowNombrePagina;
             if (!folderPath) return 'Sin página';
-            const page = pagesData.find(p => p.folder === folderPath);
+            
+            // Fix case and slashes issue
+            const normalizedFolder = folderPath.replace(/\\/g, '/').toLowerCase();
+            const page = pagesData.find(p => p.folder && p.folder.replace(/\\/g, '/').toLowerCase() === normalizedFolder);
+            
             if (page && page.nombre_pag) return page.nombre_pag;
             
             // Fallback to basename
-            return folderPath.split('\\').pop().split('/').pop();
+            return folderPath.replace(/\\/g, '/').split('/').pop();
         };
 
         const sortedData = [...csvData].sort((a, b) => {
@@ -49,7 +54,7 @@ function DashboardView() {
         const recent = sortedData.slice(0, 5).map(row => {
             return {
                 title: row.titulo || row.archivo || 'Video Desconocido',
-                page: getPageName(row.pagina_destino),
+                page: getPageName(row.pagina_destino, row.nombre_pagina),
                 status: row.estado ? row.estado.toLowerCase().trim() : 'pendiente'
             };
         });
@@ -60,12 +65,16 @@ function DashboardView() {
             const pageFolder = row.pagina_destino;
 
             if (pageFolder) {
-                if (!pageStats[pageFolder]) {
-                    pageStats[pageFolder] = { name: pageFolder, total: 0, success: 0 };
+                const normalizedFolder = pageFolder.replace(/\\/g, '/').toLowerCase();
+                const matchedKey = Object.keys(pageStats).find(k => k.replace(/\\/g, '/').toLowerCase() === normalizedFolder);
+                const targetKey = matchedKey || pageFolder;
+
+                if (!pageStats[targetKey]) {
+                    pageStats[targetKey] = { name: getPageName(pageFolder, row.nombre_pagina), total: 0, success: 0 };
                 }
-                pageStats[pageFolder].total++;
+                pageStats[targetKey].total++;
                 if (status === 'completado') {
-                    pageStats[pageFolder].success++;
+                    pageStats[targetKey].success++;
                 }
             }
 

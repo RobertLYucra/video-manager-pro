@@ -56,7 +56,8 @@ async function syncFilesToDB(event) {
                                 rutaAbsoluta: path.join(itemPath, f), 
                                 estado: 'completado', 
                                 categoria: 'General', 
-                                pagina_destino: paginaNombre
+                                pagina_destino: paginaNombre,
+                                nombre_pagina: page.nombre_pag || paginaNombre
                             });
                         });
                     } else {
@@ -74,7 +75,8 @@ async function syncFilesToDB(event) {
                                         rutaAbsoluta: path.join(subItemPath, f), 
                                         estado: 'completado', 
                                         categoria: item, 
-                                        pagina_destino: paginaNombre
+                                        pagina_destino: paginaNombre,
+                                        nombre_pagina: page.nombre_pag || paginaNombre
                                     });
                                 });
                             } else if (!fs.statSync(subItemPath).isDirectory() && ['.mp4', '.mov', '.mkv', '.avi'].includes(path.extname(subItem).toLowerCase())) {
@@ -82,6 +84,7 @@ async function syncFilesToDB(event) {
                                     file: subItem, 
                                     cat: item, 
                                     pagina_destino: paginaNombre,
+                                    nombre_pagina: page.nombre_pag || paginaNombre,
                                     dir: categoriaDir, 
                                     procesadosDir: path.join(categoriaDir, 'procesados')
                                 });
@@ -93,6 +96,7 @@ async function syncFilesToDB(event) {
                         file: item, 
                         cat: 'General', 
                         pagina_destino: paginaNombre,
+                        nombre_pagina: page.nombre_pag || paginaNombre,
                         dir: paginaDir, 
                         procesadosDir: path.join(paginaDir, 'procesados')
                     });
@@ -106,7 +110,8 @@ async function syncFilesToDB(event) {
                 rutaAbsoluta: path.join(item.dir, item.file),
                 estado: 'pendiente', 
                 categoria: item.cat, 
-                pagina_destino: item.pagina_destino
+                pagina_destino: item.pagina_destino,
+                nombre_pagina: item.nombre_pagina
             });
         });
 
@@ -129,6 +134,7 @@ async function syncFilesToDB(event) {
                 estado: v.estado,
                 categoria: v.categoria,
                 pagina_destino: v.pagina_destino,
+                nombre_pagina: v.nombre_pagina,
                 fecha_creacion: stats.birthtime.toISOString(),
             };
         });
@@ -155,7 +161,7 @@ async function syncFilesToDB(event) {
             // Vaciamos la tabla para volver a generar los registros desde cero
             await database.run('DELETE FROM videos');
 
-            const stmt = await database.prepare('INSERT INTO videos (archivo, ruta, titulo, descripcion, estado, categoria, pagina_destino, id_facebook, fecha_creacion, fecha_proceso, intentos, error_log) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            const stmt = await database.prepare('INSERT INTO videos (archivo, ruta, titulo, descripcion, estado, categoria, pagina_destino, nombre_pagina, id_facebook, fecha_creacion, fecha_proceso, intentos, error_log) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
             const processedFiles = new Set();
 
             for (const record of records) {
@@ -170,6 +176,7 @@ async function syncFilesToDB(event) {
                     record.estado, 
                     record.categoria, 
                     record.pagina_destino, 
+                    record.nombre_pagina,
                     old ? (old.id_facebook || '') : '', 
                     old ? (old.fecha_creacion || record.fecha_creacion) : record.fecha_creacion, 
                     old ? (old.fecha_proceso || '') : '', 
@@ -196,6 +203,7 @@ async function syncFilesToDB(event) {
                         old.estado, 
                         old.categoria, 
                         old.pagina_destino, 
+                        old.nombre_pagina || old.pagina_destino,
                         old.id_facebook || '', 
                         old.fecha_creacion, 
                         old.fecha_proceso || '', 
